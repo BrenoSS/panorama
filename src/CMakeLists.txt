@@ -1,5 +1,20 @@
-cmake_minimum_required(VERSION 2.8)
-project( HarrisCornerMultiScale )
+
+cmake_minimum_required( VERSION 2.8 )
+
 find_package( OpenCV REQUIRED )
-add_executable( harrisMultiScale harrisMultiScale.cpp )
-target_link_libraries( harrisMultiScale ${OpenCV_LIBS} )
+if( OpenCV_FOUND )
+	include_directories( ${OpenCV_INCLUDE_DIR} )
+endif( OpenCV_FOUND )
+
+set( ProgramName "main" )
+
+set( SOURCES 
+	main.cpp
+	FeatureExtractor.cpp
+)
+
+add_executable( ${ProgramName} ${SOURCES} )
+
+target_link_libraries( ${ProgramName}
+	${OpenCV_LIBS}
+)

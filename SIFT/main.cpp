@@ -23,7 +23,6 @@ enum{
 
 bool cmpfun(cv::DMatch a, cv::DMatch b) { return a.distance < b.distance; }
 void showUsage( char** );
-void cornerHarris( cv::Mat&, std::vector<cv::KeyPoint>& );
 
 /**
  * @function main
@@ -222,41 +221,3 @@ void showUsage( char **argv )
   exit( EXIT_FAILURE );
 }
 
-/**
- * @function cornerHarris_demo
- * @brief Executes the corner detection and draw a circle around the possible corners
- */
-void cornerHarris( cv::Mat& src, std::vector<cv::KeyPoint>& keypoints )
-{
-  int thresh = 150;
-  cv::Mat dst, dst_norm;
-  dst = cv::Mat::zeros( src.size(), CV_32FC1 );
-
-  /// Detector parameters
-  int blockSize = 2;
-  int apertureSize = 3;
-  double k = 0.04;
-
-  /// Detecting corners
-  cv::cornerHarris( src, dst, blockSize, apertureSize, k, cv::BORDER_DEFAULT );
-
-  /// Normalizing
-  cv::normalize( dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat() );
-
-  /// Drawing a circle around corners
-  for( int j = 0; j < dst_norm.rows ; j++ )
-     { for( int i = 0; i < dst_norm.cols; i++ )
-          {
-            if( (int) dst_norm.at<float>(j,i) > thresh )
-              {
-                cv::Point2f pt(i, j);
-               keypoints.push_back(cv::KeyPoint(pt,40.0,-1,0,0,-1));
-               cv::circle( src, cv::Point( i, j ), 5,  cv::Scalar(0), 2, 8, 0 );
-              }
-          }
-     }
-  
-  imwrite("corners.png", src); 
-
-  
-}

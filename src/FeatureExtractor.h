@@ -21,6 +21,10 @@ public:
 
     void Compute(cv::Mat& image, std::vector<cv::KeyPoint>& keypoints,
                   cv::Mat& descriptors);
+    
+    cv::Mat getRoi8X8(cv::Mat& roi40X40);
+    
+    cv::Mat getRoi40X40(cv::Mat& image, int x, int y);
 
 protected:
 

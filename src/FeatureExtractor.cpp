@@ -3,7 +3,7 @@
 void FeatureExtractor::Compute(cv::Mat& image, std::vector<cv::KeyPoint>& keypoints,
                   cv::Mat& descriptors) {
     
-    cv::Mat roi40X40, roi8X8;
+    cv::Mat roi40X40, roi8X8, blurredPatch;
     int pixelValue, tamanho,  m = 0, indiceX, indiceY;
     std::vector<std::vector<int> > descritor;
     /*
@@ -20,7 +20,15 @@ void FeatureExtractor::Compute(cv::Mat& image, std::vector<cv::KeyPoint>& keypoi
             indiceY = p.y - 19;
             roi40X40 = getRoi40X40(image, indiceX, indiceY);
 
-            roi8X8 = getRoi8X8(roi40X40);
+            cv::imwrite("roi40X40.jpg", roi40X40);
+            
+            blurredPatch = getBlurredRoi(roi40X40);
+            
+            cv::imwrite("blurredPatch.jpg", blurredPatch);
+            
+            roi8X8 = getRoi8X8(blurredPatch);
+            
+            cv::imwrite("roi8X8.jpg", roi8X8);
             
             std::vector<int> patchTolinha;
 
@@ -82,6 +90,14 @@ cv::Mat FeatureExtractor::getRoi8X8(cv::Mat& roi40X40)
     return img8X8;
 }
 
+cv::Mat FeatureExtractor::getBlurredRoi(cv::Mat& patch)
+{
+    cv::Mat blurredPatch;
+    cv::GaussianBlur(patch, blurredPatch, cv::Size(7,7), 0);
+    
+    return blurredPatch;
+}
+
 cv::Mat FeatureExtractor::getRoi40X40(cv::Mat& image, int x, int y)
 {
     cv::Mat temp;
@@ -91,4 +107,3 @@ cv::Mat FeatureExtractor::getRoi40X40(cv::Mat& image, int x, int y)
 
     return temp;
 }
-  

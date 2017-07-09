@@ -8,10 +8,11 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
+#include "opencv2/xfeatures2d.hpp"
 #include <iostream>
 #include <vector>
-#include "FeatureExtractor.h"
 
+using namespace cv;
 
 enum{
   PROGRAM_NAME=0,
@@ -40,41 +41,46 @@ int main( int argc, char** argv )
   cv::Mat src1, src2, src_gray1, src_gray2, IM1_descriptors, IM2_descriptors; 
   std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
   double min_dist = 100, max_dist = 0;
-  FeatureExtractor *descritor = new FeatureExtractor();
+  Ptr<cv::xfeatures2d::SIFT> sift = cv::xfeatures2d::SIFT::create();
           
-  //src1 = cv::imread( "/home/breno/VC/goldengate-00.png", cv::IMREAD_COLOR );
-  src1 = cv::imread( "/home/breno/VC/Image1.jpg", cv::IMREAD_COLOR );
+  src1 = cv::imread( "/home/breno/VC/goldengate-00.png", cv::IMREAD_COLOR );
+  //src1 = cv::imread( "/home/breno/VC/Image1.jpg", cv::IMREAD_COLOR );
   cv::cvtColor( src1, src_gray1, cv::COLOR_BGR2GRAY );
+  
+  
+          
+  //std::cout << "Tipo da imagem em tons de cinza: " << src_gray1.type() << std::endl;
 
-  std::cout << "Tipo da imagem em tons de cinza: " << src_gray1.type() << std::endl;
-
-  //src2 = cv::imread( "/home/breno/VC/goldengate-01.png", cv::IMREAD_COLOR );
-  src2 = cv::imread( "/home/breno/VC/Image2.jpg", cv::IMREAD_COLOR );
+  src2 = cv::imread( "/home/breno/VC/goldengate-01.png", cv::IMREAD_COLOR );
+  //src2 = cv::imread( "/home/breno/VC/Image2.jpg", cv::IMREAD_COLOR );
   cv::cvtColor( src2, src_gray2, cv::COLOR_BGR2GRAY );
   
-//  cv::Mat src_gray1_expanded(src_gray1.rows, (src_gray1.cols+src_gray2.cols), src_gray1.type());
-//  cv::Mat dst_roi = src_gray1_expanded(cv::Rect(0, 0, src_gray1.cols, src_gray1.rows));
-//  src_gray1.copyTo(dst_roi);
+  Mat src_gray1_expanded(src_gray1.rows, (src_gray1.cols+src_gray2.cols), src_gray1.type());
+  Mat dst_roi = src_gray1_expanded(Rect(0, 0, src_gray1.cols, src_gray1.rows));
+  src_gray1.copyTo(dst_roi);
   //src_gray1.copyTo(src_gray1_expanded(Rect(0, 0, src_gray1.rows, src_gray1.cols)));
   
-//  imwrite("src_gray1_expanded.jpg",src_gray1_expanded);
-//  
-//  cv::Mat src_gray2_expanded(src_gray2.rows, (src_gray1.cols+src_gray2.cols), src_gray2.type());
-//  cv::Mat dst_roi2 = src_gray2_expanded(cv::Rect(src_gray1.cols, 0, src_gray2.cols, src_gray2.rows));
-//  src_gray2.copyTo(dst_roi2);
+  imwrite("src_gray1_expanded.jpg",src_gray1_expanded);
+  
+  Mat src_gray2_expanded(src_gray2.rows, (src_gray1.cols+src_gray2.cols), src_gray2.type());
+  Mat dst_roi2 = src_gray2_expanded(Rect(src_gray1.cols, 0, src_gray2.cols, src_gray2.rows));
+  src_gray2.copyTo(dst_roi2);
   //src_gray1.copyTo(src_gray1_expanded(Rect(0, 0, src_gray1.rows, src_gray1.cols)));
   
-//  cv::imwrite("src_gray2_expanded.jpg",src_gray2_expanded);
+  imwrite("src_gray2_expanded.jpg",src_gray2_expanded);
+  
+  sift->detect( src_gray1, keypoints_1 );
+  sift->detect( src_gray2, keypoints_2 );
 
-  cornerHarris( src_gray1, keypoints_1 );
-  cornerHarris( src_gray2, keypoints_2 );
+  sift->compute(src_gray1, keypoints_1, IM1_descriptors);
+  sift->compute(src_gray2, keypoints_2, IM2_descriptors);
+
+  //descritor->Compute(src_gray1, keypoints_1, IM1_descriptors);
+  //descritor->Compute(src_gray2, keypoints_2, IM2_descriptors);
   
-  descritor->Compute(src_gray1, keypoints_1, IM1_descriptors);
-  descritor->Compute(src_gray2, keypoints_2, IM2_descriptors);
-  
-  std::cout << "Descritores 1 = " << std::endl << " " << IM1_descriptors << std::endl << std::endl;
-  std::cout << "\n Tipo da Matriz: "<< IM1_descriptors.type() << "\n\n"<< std::endl;
-  std::cout << "Descritores 2 = " << std::endl << " " << IM2_descriptors << std::endl << std::endl;
+  //std::cout << "Descritores 1 = " << std::endl << " " << IM1_descriptors << std::endl << std::endl;
+  //std::cout << "\n Tipo da Matriz: "<< IM1_descriptors.type() << "\n\n"<< std::endl;
+  //std::cout << "Descritores 2 = " << std::endl << " " << IM2_descriptors << std::endl << std::endl;
   
   cv::FlannBasedMatcher matcher;
   std::vector< cv::DMatch > matches;
@@ -140,21 +146,15 @@ int main( int argc, char** argv )
           
   }
   
-     cv::Mat img_matches;
-  cv::drawMatches( src_gray1, keypoints_1, src_gray2, keypoints_2,
-               matches, img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1),
-               std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-
-  //-- Show detected matches
-  cv::imwrite("GoodMatches.jpg", img_matches);
-  
   //cv::Mat warp_dst = cv::Mat::zeros( (src_gray1.rows + src_gray2.rows), (src_gray1.cols + src_gray2.cols), src_gray1.type() );
   
-  cv::Mat warp_dst = cv::Mat::zeros( src_gray2.rows, (src_gray1.cols+src_gray2.cols), src_gray2.type() );
+  cv::Mat warp_dst = cv::Mat::zeros( src_gray2.rows, (src_gray2.cols+src_gray1.cols), src_gray2.type() );
   
   cv::warpAffine( src_gray2, warp_dst, fun, warp_dst.size() );
   
   cv::imwrite("Src2_warped.jpg", warp_dst);
+  
+  //return 0;
   
   for(int i = 0; i < warp_dst.rows; i++)
   {
@@ -176,8 +176,8 @@ int main( int argc, char** argv )
   std::cout << "Linhas da Imagem 1: " << src_gray1.rows << std::endl << "Colunas Imagem 1: " << src_gray1.cols <<std::endl;
   std::cout << "Linhas da warp_dst: " << warp_dst.rows << std::endl << "Colunas warp_dst : " << warp_dst.cols <<std::endl;
   
-    cv::Size sz1 = src_gray1.size();
-    cv::Size sz2 = warp_dst.size();
+    Size sz1 = src_gray1.size();
+    Size sz2 = warp_dst.size();
     
     std::cout << "height da Imagem 1: " << sz1.height << std::endl << "width Imagem 1: " << sz1.width <<std::endl;
     std::cout << "height da Imagem 2: " << sz2.height << std::endl << "width Imagem 2: " << sz2.width <<std::endl;
@@ -198,7 +198,13 @@ int main( int argc, char** argv )
   
 //  cv::imwrite("ImagensJuntas.jpg", newImage);
   
+   cv::Mat img_matches;
+  cv::drawMatches( src_gray1, keypoints_1, src_gray2, keypoints_2,
+               matches, img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1),
+               std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
+  //-- Show detected matches
+  cv::imwrite("GoodMatches.jpg", img_matches);
   
   
   
@@ -243,7 +249,7 @@ void cornerHarris( cv::Mat& src, std::vector<cv::KeyPoint>& keypoints )
               {
                 cv::Point2f pt(i, j);
                keypoints.push_back(cv::KeyPoint(pt,40.0,-1,0,0,-1));
-               //cv::circle( src, cv::Point( i, j ), 5,  cv::Scalar(0), 2, 8, 0 );
+               cv::circle( src, cv::Point( i, j ), 5,  cv::Scalar(0), 2, 8, 0 );
               }
           }
      }

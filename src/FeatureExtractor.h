@@ -25,6 +25,8 @@ public:
     cv::Mat getRoi8X8(cv::Mat& roi40X40);
     
     cv::Mat getRoi40X40(cv::Mat& image, int x, int y);
+    
+    cv::Mat getBlurredRoi(cv::Mat& patch);
 
 protected:
 
